@@ -124,7 +124,7 @@ namespace Faction.Build.Dotnet.Handlers
           Console.WriteLine($"[PayloadBuildService] Build Successful!");
           string originalPath = Path.Join(workingDir, payload.AgentTypeFormat.BuildLocation);
           string fileExtension = Path.GetExtension(originalPath);
-          string payloadPath = Path.Join(workingDir, "/build/", $"{payload.AgentType.Name}_{payload.AgentTypeFormat.Name}_{payload.Name}_{DateTime.Now.ToString("yyyyMMddHHmmss")}{fileExtension}");
+          string payloadPath = Path.Join(Settings.AgentsPath, "/build/", $"{payload.AgentType.Name}_{payload.AgentTypeFormat.Name}_{payload.Name}_{DateTime.Now.ToString("yyyyMMddHHmmss")}{fileExtension}");
           Console.WriteLine($"[PayloadBuildService] Moving from {originalPath} to {payloadPath}");
           File.Move(originalPath, payloadPath);
           string uploadUlr = $"{apiUrl}/{payload.Id}/file/";
