@@ -109,6 +109,8 @@ namespace Faction.Build.Dotnet.Handlers
         string buildCommand = payload.AgentTypeFormat.BuildCommand.Replace("PAYLOADNAME", payload.Name);
         buildCommand = buildCommand.Replace("PAYLOADKEY", payload.Key);
         buildCommand = buildCommand.Replace("TRANSPORT", transportB64);
+        buildCommand = buildCommand.Replace("BEACONINTERVAL", payload.BeaconInterval.ToString());
+        buildCommand = buildCommand.Replace("JITTER", payload.Jitter.ToString());
         if (payload.ExpirationDate.HasValue)
         {
           buildCommand = buildCommand.Replace("EXPIRATION", payload.ExpirationDate.Value.ToString("o"));
@@ -120,19 +122,28 @@ namespace Faction.Build.Dotnet.Handlers
         cmdResult = RunCommand(workingDir, buildCommand);
 
         if (cmdResult["ExitCode"] == "0") {
-
-          Console.WriteLine($"[PayloadBuildService] Build Successful!");
-          string originalPath = Path.Join(workingDir, payload.AgentTypeFormat.BuildLocation);
-          string fileExtension = Path.GetExtension(originalPath);
-          string payloadPath = Path.Join(Settings.AgentsPath, "/build/", $"{payload.AgentType.Name}_{payload.AgentTypeFormat.Name}_{payload.Name}_{DateTime.Now.ToString("yyyyMMddHHmmss")}{fileExtension}");
-          Console.WriteLine($"[PayloadBuildService] Moving from {originalPath} to {payloadPath}");
-          File.Move(originalPath, payloadPath);
-          string uploadUlr = $"{apiUrl}/{payload.Id}/file/";
-          WebClient wc = new WebClient();
-          wc.Headers.Add("build-token", payload.BuildToken);
-          Console.WriteLine($"[PayloadBuildService] Uploading to {uploadUlr} with token {payload.BuildToken}");
-          byte[] resp = wc.UploadFile(uploadUlr, payloadPath);
-          Console.WriteLine($"[PayloadBuildService] Response: {wc.Encoding.GetString(resp)}");
+          try {
+            Console.WriteLine($"[PayloadBuildService] Build Successful!");
+            string originalPath = Path.Join(workingDir, payload.AgentTypeFormat.BuildLocation);
+            string fileExtension = Path.GetExtension(originalPath);
+            string payloadPath = Path.Join(Settings.AgentsPath, "/build/", $"{payload.AgentType.Name}_{payload.AgentTypeFormat.Name}_{payload.Name}_{DateTime.Now.ToString("yyyyMMddHHmmss")}{fileExtension}");
+            Console.WriteLine($"[PayloadBuildService] Moving from {originalPath} to {payloadPath}");
+            File.Move(originalPath, payloadPath);
+            string uploadUlr = $"{apiUrl}/{payload.Id}/file/";
+            WebClient wc = new WebClient();
+            wc.Headers.Add("build-token", payload.BuildToken);
+            Console.WriteLine($"[PayloadBuildService] Uploading to {uploadUlr} with token {payload.BuildToken}");
+            byte[] resp = wc.UploadFile(uploadUlr, payloadPath);
+            Console.WriteLine($"[PayloadBuildService] Response: {wc.Encoding.GetString(resp)}");
+          }
+          catch (Exception e) {
+            Console.WriteLine($"ERROR UPLOADING PAYLOAD TO API: \n{e.Message}");
+            NewErrorMessage response = new NewErrorMessage();
+            response.Source = ".NET Build Server";
+            response.Message = $"Error uploading {payload.AgentType.Name} payload to API";
+            response.Details = $"{e.Message}";
+            _eventBus.Publish(response, replyTo=null, correlationId=null);
+          }
         }
         else {
           Console.WriteLine($"ERROR DURING AGENT BUILD: \nStdout: {cmdResult["Output"]}\n Stderr: {cmdResult["Error"]}");
