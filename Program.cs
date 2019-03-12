@@ -118,7 +118,7 @@ namespace Faction.Build.Dotnet
       services.AddSingleton<IEventBusSubscriptionsManager, InMemoryEventBusSubscriptionsManager>();
 
       // Add instances of our Message Event Handler to the DI pipeline
-      services.AddTransient<PayloadEventHandler>();
+      services.AddTransient<NewPayloadEventHandler>();
       services.AddTransient<LoadModuleEventHandler>();
       services.AddTransient<UpdatePayloadEventHandler>();
     }
@@ -128,8 +128,8 @@ namespace Faction.Build.Dotnet
       var eventBus = sp.GetRequiredService<IEventBus>();
       // Map the Message Event Type to the proper Event Handler
       eventBus.Initialize();
-      eventBus.Subscribe<Payload, PayloadEventHandler>();
       eventBus.Subscribe<LoadModule, LoadModuleEventHandler>();
+      eventBus.Subscribe<NewPayload, NewPayloadEventHandler>();
       eventBus.Subscribe<UpdatePayload, UpdatePayloadEventHandler>();
     }
   }

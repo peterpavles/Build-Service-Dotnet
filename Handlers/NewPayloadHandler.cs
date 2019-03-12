@@ -10,19 +10,20 @@ using Newtonsoft.Json;
 using Faction.Common;
 using Faction.Common.Backend.Database;
 using Faction.Common.Backend.EventBus.Abstractions;
+using Faction.Common.Messages;
 using Faction.Common.Models;
 
 using Faction.Build.Dotnet;
 
 namespace Faction.Build.Dotnet.Handlers
 {
-  public class PayloadEventHandler : IEventHandler<Payload>
+  public class NewPayloadEventHandler : IEventHandler<NewPayload>
   {
     public string apiUrl = "http://api:5000/api/v1/payload";
     private readonly IEventBus _eventBus;
     private static FactionRepository _taskRepository;
 
-    public PayloadEventHandler(IEventBus eventBus, FactionRepository taskRepository)
+    public NewPayloadEventHandler(IEventBus eventBus, FactionRepository taskRepository)
     {
       _eventBus = eventBus; // Inject the EventBus into this Handler to Publish a message, insert AppDbContext here for DB Access
       _taskRepository = taskRepository;
@@ -59,14 +60,22 @@ namespace Faction.Build.Dotnet.Handlers
 
     }
 
-    public async Task Handle(Payload payload, string replyTo, string correlationId)
+    public async Task Handle(NewPayload newPayload, string replyTo, string correlationId)
     {
       Console.WriteLine($"[i] Got New Payload Message.");
+      Payload payload = new Payload();
       // Decode and Decrypt AgentTaskResponse
-      payload.AgentType = _taskRepository.GetAgentType(payload.AgentTypeId);
-      payload.AgentTypeFormat = _taskRepository.GetAgentTypeFormat(payload.AgentTypeFormatId);
-      payload.AgentTransportType = _taskRepository.GetAgentTransportType(payload.AgentTransportTypeId);
-      payload.Transport = _taskRepository.GetTransport(payload.TransportId);
+      payload.AgentType = _taskRepository.GetAgentType(newPayload.AgentTypeId);
+      payload.AgentTypeFormat = _taskRepository.GetAgentTypeFormat(newPayload.AgentTypeFormatId);
+      payload.AgentTransportType = _taskRepository.GetAgentTransportType(newPayload.AgentTransportTypeId);
+      payload.Transport = _taskRepository.GetTransport(newPayload.TransportId);
+      payload.Name = newPayload.Name;
+      payload.Description = newPayload.Description;
+      payload.Jitter = newPayload.Jitter;
+      payload.BeaconInterval = newPayload.BeaconInterval;
+      payload.ExpirationDate = newPayload.ExpirationDate;
+      payload.BuildToken = newPayload.BuildToken;
+
       payload.Created = DateTime.UtcNow;
       payload.Enabled = true;
       payload.Visible = true;
