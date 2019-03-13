@@ -1,5 +1,6 @@
 FROM mono:5.18.0
 WORKDIR /app
+ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 RUN apt-get update && \
     apt-get install wget gpg apt-transport-https apt-utils dirmngr -y && \
