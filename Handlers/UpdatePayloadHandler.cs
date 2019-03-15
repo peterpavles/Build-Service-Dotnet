@@ -38,7 +38,14 @@ namespace Faction.Build.Dotnet.Handlers
       payload.Visible = updatePayload.Visible;
       payload.Jitter = updatePayload.Jitter;
       payload.BeaconInterval = updatePayload.BeaconInterval;
-      payload.ExpirationDate = updatePayload.ExpirationDate;
+      
+      // This is a hack to keep expiration date from getting set to a default date
+      if (updatePayload.ExpirationDate != null) {
+        int diff = DateTime.Compare(updatePayload.ExpirationDate, new DateTime(2001, 01, 01));
+        if (diff > 0 ) {
+          payload.ExpirationDate = updatePayload.ExpirationDate;
+        }
+      }
       _taskRepository.Update(payload.Id, payload);
 
       PayloadUpdated payloadUpdated = new PayloadUpdated();
