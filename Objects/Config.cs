@@ -3,13 +3,9 @@ using System.Collections.Generic;
 
 namespace Faction.Build.Dotnet.Objects
 {
-  public class AgentFormatConfig
+  public class AgentSubConfig
   {
     public string Name { get; set; }
-    public string Description { get; set; }
-    public string BuildCommand { get; set; }
-    public string BuildLocation { get; set; }
-
   }
 
   public class AgentTransportConfig
@@ -25,13 +21,22 @@ namespace Faction.Build.Dotnet.Objects
     public string Name { get; set; }
     public string Guid { get; set; }
     public List<string> Authors { get; set; }
-    public List<AgentFormatConfig> AgentTypeFormats { get; set; }
+    public string BuildCommand { get; set; }
+    public string BuildLocation { get; set; }
+    public List<AgentSubConfig> OperatingSystems { get; set; }
+    public List<AgentSubConfig> Architectures { get; set; }
+    public List<AgentSubConfig> Versions { get; set; }
+    public List<AgentSubConfig> Formats { get; set; }
+    public List<AgentSubConfig> Configurations { get; set; }
+
     public List<AgentTransportConfig> AgentTransportTypes { get; set; }
     public List<CommandConfig> Commands { get; set; }
   }
 
-  public class CommandParameterConfig {
-    public CommandParameterConfig() {
+  public class CommandParameterConfig
+  {
+    public CommandParameterConfig()
+    {
       Values = new List<string>();
       Required = false;
     }
@@ -41,8 +46,10 @@ namespace Faction.Build.Dotnet.Objects
     public int? Position { get; set; }
     public List<string> Values { get; set; }
   }
-  public class CommandConfig {
-    public CommandConfig() {
+  public class CommandConfig
+  {
+    public CommandConfig()
+    {
       Parameters = new List<CommandParameterConfig>();
       Artifacts = new List<string>();
     }
@@ -58,7 +65,8 @@ namespace Faction.Build.Dotnet.Objects
 
   public class ModuleConfig
   {
-    public ModuleConfig() {
+    public ModuleConfig()
+    {
       Commands = new List<CommandConfig>();
     }
     public string Name { get; set; }
@@ -68,5 +76,21 @@ namespace Faction.Build.Dotnet.Objects
     public string BuildLocation { get; set; }
     public List<CommandConfig> Commands { get; set; }
 
+  }
+
+  public class BuildConfig
+  {
+    public string PayloadName;
+    public string PayloadKey;
+    public string Transport;
+    public int BeaconInterval;
+    public double Jitter;
+    public string ExpirationDate;
+    public string Architecture;
+    public string OperatingSystem;
+    public string Configuration;
+    public string Version;
+    public bool Debug;
+    public string TransportConfiguration;
   }
 }

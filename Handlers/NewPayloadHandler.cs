@@ -14,6 +14,7 @@ using Faction.Common.Messages;
 using Faction.Common.Models;
 
 using Faction.Build.Dotnet;
+using Faction.Build.Dotnet.Objects;
 
 namespace Faction.Build.Dotnet.Handlers
 {
@@ -27,6 +28,23 @@ namespace Faction.Build.Dotnet.Handlers
     {
       _eventBus = eventBus; // Inject the EventBus into this Handler to Publish a message, insert AppDbContext here for DB Access
       _taskRepository = taskRepository;
+    }
+
+    public BuildConfig CreateBuildConfig(Payload payload)
+    {
+      BuildConfig buildConfig = new BuildConfig();
+      buildConfig.BeaconInterval = payload.BeaconInterval;
+      buildConfig.Jitter = payload.Jitter;
+      buildConfig.PayloadName = payload.Name;
+      buildConfig.PayloadKey = payload.Key;
+      buildConfig.ExpirationDate = payload.ExpirationDate.Value.ToString("o");
+      buildConfig.OperatingSystem = _taskRepository.GetAgentTypeOperatingSystem(payload.AgentTypeOperatingSystemId).Name;
+      buildConfig.Version = _taskRepository.GetAgentTypeVersion(payload.AgentTypeVersionId).Name;
+      buildConfig.Architecture = _taskRepository.GetAgentTypeVersion(payload.AgentTypeVersionId).Name;
+      buildConfig.Configuration = _taskRepository.GetAgentTypeConfiguration(payload.AgentTypeConfigurationId).Name;
+      buildConfig.TransportConfiguration = payload.Transport.Configuration;
+      buildConfig.Debug = payload.Debug;
+      return buildConfig;
     }
 
     public Dictionary<string, string> RunCommand(string agentDirectory, string cmd) {
@@ -69,6 +87,13 @@ namespace Faction.Build.Dotnet.Handlers
       payload.AgentTypeFormat = _taskRepository.GetAgentTypeFormat(newPayload.AgentTypeFormatId);
       payload.AgentTransportType = _taskRepository.GetAgentTransportType(newPayload.AgentTransportTypeId);
       payload.Transport = _taskRepository.GetTransport(newPayload.TransportId);
+      payload.AgentTypeArchitectureId = newPayload.ArchitectureId;
+      payload.AgentTypeFormatId = newPayload.FormatId;
+      payload.AgentTypeVersionId = newPayload.VersionId;
+      payload.AgentTypeConfigurationId = newPayload.AgentTypeConfigurationId;
+      payload.AgentTypeOperatingSystemId = newPayload.OperatingSystemId;
+      payload.Debug = newPayload.Debug;
+
       payload.Name = newPayload.Name;
       payload.Description = newPayload.Description;
       payload.Jitter = newPayload.Jitter;
@@ -87,21 +112,26 @@ namespace Faction.Build.Dotnet.Handlers
 
       string workingDir = Path.Join(Settings.AgentsPath, payload.AgentType.Name);
 
+      // Create build config file
+      BuildConfig buildConfig = CreateBuildConfig(payload);
+
+      string buildConfigFile = Path.GetTempFileName();
+      File.AppendAllText(buildConfigFile, JsonConvert.SerializeObject(buildConfig, Formatting.Indented));
+
       // Build transport first
       File.Delete(Path.Join(workingDir, payload.AgentTransportType.BuildLocation));
 
-      string transportBuildCommand = payload.AgentTransportType.BuildCommand;
+      string transportConfigFile = Path.GetTempFileName();
+      File.AppendAllText(transportConfigFile, payload.Transport.Configuration);
 
-      List<Dictionary<string, string>> transportBuildConfig = JsonConvert.DeserializeObject<List<Dictionary<string, string>>>(payload.Transport.Configuration);
-      foreach (Dictionary<string, string> configEntry in transportBuildConfig) {
-        transportBuildCommand = transportBuildCommand.Replace(configEntry["Name"], Convert.ToBase64String(Encoding.UTF8.GetBytes(configEntry["Value"])));
-      }
+      string transportBuildCommand = $"{payload.AgentTransportType.BuildCommand} {transportConfigFile}";
 
       Dictionary<string, string> cmdResult = RunCommand(workingDir, transportBuildCommand);
       string transportB64 = "";
       if (cmdResult["ExitCode"] == "0") {
         byte[] transportBytes = File.ReadAllBytes(Path.Join(workingDir, payload.AgentTransportType.BuildLocation));
         transportB64 = Convert.ToBase64String(transportBytes);
+        File.Delete(buildConfigFile);
       }
       else {
         Console.WriteLine($"ERROR DURING TRANSPORT BUILD: \nStdout: {cmdResult["Output"]}\n Stderr: {cmdResult["Error"]}");
@@ -114,28 +144,19 @@ namespace Faction.Build.Dotnet.Handlers
 
       // Build the agent
       if (!String.IsNullOrEmpty(transportB64)) {
-        File.Delete(Path.Join(workingDir, payload.AgentTypeFormat.BuildLocation));
-        string buildCommand = payload.AgentTypeFormat.BuildCommand.Replace("PAYLOADNAME", payload.Name);
-        buildCommand = buildCommand.Replace("PAYLOADKEY", payload.Key);
-        buildCommand = buildCommand.Replace("TRANSPORT", transportB64);
-        buildCommand = buildCommand.Replace("BEACONINTERVAL", payload.BeaconInterval.ToString());
-        buildCommand = buildCommand.Replace("JITTER", payload.Jitter.ToString());
-        if (payload.ExpirationDate.HasValue)
-        {
-          buildCommand = buildCommand.Replace("EXPIRATION", payload.ExpirationDate.Value.ToString("o"));
-        }
-        else
-        {
-          buildCommand = buildCommand.Replace("EXPIRATION", "");
-        }
+        buildConfig.Transport = transportB64;
+        File.AppendAllText(buildConfigFile, JsonConvert.SerializeObject(buildConfig, Formatting.Indented));
+
+        File.Delete(Path.Join(workingDir, payload.AgentType.BuildLocation));
+        string buildCommand = $"{payload.AgentType.BuildCommand} {buildConfigFile}";
         cmdResult = RunCommand(workingDir, buildCommand);
 
         if (cmdResult["ExitCode"] == "0") {
           try {
             Console.WriteLine($"[PayloadBuildService] Build Successful!");
-            string originalPath = Path.Join(workingDir, payload.AgentTypeFormat.BuildLocation);
+            string originalPath = Path.Join(workingDir, payload.AgentType.BuildLocation);
             string fileExtension = Path.GetExtension(originalPath);
-            string payloadPath = Path.Join(Settings.AgentsPath, "/build/", $"{payload.AgentType.Name}_{payload.AgentTypeFormat.Name}_{payload.Name}_{DateTime.Now.ToString("yyyyMMddHHmmss")}{fileExtension}");
+            string payloadPath = Path.Join(Settings.AgentsPath, "/build/", $"{payload.AgentType.Name}_{payload.AgentTypeConfiguration.Name}_{payload.Name}_{DateTime.Now.ToString("yyyyMMddHHmmss")}{fileExtension}");
             Console.WriteLine($"[PayloadBuildService] Moving from {originalPath} to {payloadPath}");
             File.Move(originalPath, payloadPath);
             string uploadUlr = $"{apiUrl}/{payload.Id}/file/";
@@ -144,6 +165,7 @@ namespace Faction.Build.Dotnet.Handlers
             Console.WriteLine($"[PayloadBuildService] Uploading to {uploadUlr} with token {payload.BuildToken}");
             byte[] resp = wc.UploadFile(uploadUlr, payloadPath);
             Console.WriteLine($"[PayloadBuildService] Response: {wc.Encoding.GetString(resp)}");
+            File.Delete(buildConfigFile);
           }
           catch (Exception e) {
             Console.WriteLine($"ERROR UPLOADING PAYLOAD TO API: \n{e.Message}");
@@ -162,6 +184,14 @@ namespace Faction.Build.Dotnet.Handlers
           response.Details = $"Stdout: {cmdResult["Output"]}\n Stderr: {cmdResult["Error"]}";
           _eventBus.Publish(response, replyTo=null, correlationId=null);
         }
+      }
+      else {
+        Console.WriteLine($"ERROR DURING AGENT BUILD: \nStdout: {cmdResult["Output"]}\n Stderr: {cmdResult["Error"]}");
+        NewErrorMessage response = new NewErrorMessage();
+        response.Source = ".NET Build Server";
+        response.Message = $"Error building {payload.AgentType.Name}";
+        response.Details = $"Tried to build an agent without a Base64 encoded transport string. Transport build must have failed.";
+        _eventBus.Publish(response, replyTo=null, correlationId=null);
       }
     }
   }

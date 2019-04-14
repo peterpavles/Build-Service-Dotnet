@@ -124,16 +124,46 @@ namespace Faction.Build.Dotnet
           agentType.LanguageId = Settings.LanguageId;
           dbRepository.Add(agentType);
 
-          foreach (AgentFormatConfig formatConfig in agentTypeConfig.AgentTypeFormats)
+          foreach (AgentSubConfig subConfig in agentTypeConfig.Architectures)
+          {
+            AgentTypeArchitecture agentTypeArchitecture = new AgentTypeArchitecture();
+            agentTypeArchitecture.Name = subConfig.Name;
+            agentTypeArchitecture.AgentTypeId = agentType.Id;
+            dbRepository.Add(agentTypeArchitecture);
+          }
+
+          foreach (AgentSubConfig osConfig in agentTypeConfig.OperatingSystems)
+          {
+            AgentTypeOperatingSystem agentTypeOperatingSystem = new AgentTypeOperatingSystem();
+            agentTypeOperatingSystem.Name = osConfig.Name;
+            agentTypeOperatingSystem.AgentTypeId = agentType.Id;
+            dbRepository.Add(agentTypeOperatingSystem);
+          }
+
+          foreach (AgentSubConfig formatConfig in agentTypeConfig.Formats)
           {
             AgentTypeFormat agentTypeFormat = new AgentTypeFormat();
             agentTypeFormat.Name = formatConfig.Name;
-            agentTypeFormat.Description = formatConfig.Description;
-            agentTypeFormat.BuildCommand = formatConfig.BuildCommand;
-            agentTypeFormat.BuildLocation = formatConfig.BuildLocation;
             agentTypeFormat.AgentTypeId = agentType.Id;
             dbRepository.Add(agentTypeFormat);
           }
+
+          foreach (AgentSubConfig versionConfig in agentTypeConfig.Versions)
+          {
+            AgentTypeVersion agentTypeVersion = new AgentTypeVersion();
+            agentTypeVersion.Name = versionConfig.Name;
+            agentTypeVersion.AgentTypeId = agentType.Id;
+            dbRepository.Add(agentTypeVersion);
+          }
+          
+          foreach (AgentSubConfig ConfigurationConfig in agentTypeConfig.Configurations)
+          {
+            AgentTypeConfiguration agentTypeConfiguration = new AgentTypeConfiguration();
+            agentTypeConfiguration.Name = ConfigurationConfig.Name;
+            agentTypeConfiguration.AgentTypeId = agentType.Id;
+            dbRepository.Add(agentTypeConfiguration);
+          }
+
 
           foreach (AgentTransportConfig agentTransportConfig in agentTypeConfig.AgentTransportTypes)
           {
