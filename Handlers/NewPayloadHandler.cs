@@ -37,7 +37,10 @@ namespace Faction.Build.Dotnet.Handlers
       buildConfig.Jitter = payload.Jitter;
       buildConfig.PayloadName = payload.Name;
       buildConfig.PayloadKey = payload.Key;
-      buildConfig.ExpirationDate = payload.ExpirationDate.Value.ToString("o");
+      if (payload.ExpirationDate.HasValue)
+      {
+        buildConfig.ExpirationDate = payload.ExpirationDate.Value.ToString("o");
+      }
       buildConfig.OperatingSystem = _taskRepository.GetAgentTypeOperatingSystem(payload.AgentTypeOperatingSystemId).Name;
       buildConfig.Version = _taskRepository.GetAgentTypeVersion(payload.AgentTypeVersionId).Name;
       buildConfig.Architecture = _taskRepository.GetAgentTypeVersion(payload.AgentTypeVersionId).Name;
@@ -82,9 +85,7 @@ namespace Faction.Build.Dotnet.Handlers
     {
       Console.WriteLine($"[i] Got New Payload Message.");
       Payload payload = new Payload();
-      // Decode and Decrypt AgentTaskResponse
       payload.AgentType = _taskRepository.GetAgentType(newPayload.AgentTypeId);
-      payload.AgentTypeFormat = _taskRepository.GetAgentTypeFormat(newPayload.AgentTypeFormatId);
       payload.AgentTransportType = _taskRepository.GetAgentTransportType(newPayload.AgentTransportTypeId);
       payload.Transport = _taskRepository.GetTransport(newPayload.TransportId);
       payload.AgentTypeArchitectureId = newPayload.ArchitectureId;

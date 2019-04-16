@@ -3,11 +3,6 @@ using System.Collections.Generic;
 
 namespace Faction.Build.Dotnet.Objects
 {
-  public class AgentSubConfig
-  {
-    public string Name { get; set; }
-  }
-
   public class AgentTransportConfig
   {
 
@@ -23,11 +18,11 @@ namespace Faction.Build.Dotnet.Objects
     public List<string> Authors { get; set; }
     public string BuildCommand { get; set; }
     public string BuildLocation { get; set; }
-    public List<AgentSubConfig> OperatingSystems { get; set; }
-    public List<AgentSubConfig> Architectures { get; set; }
-    public List<AgentSubConfig> Versions { get; set; }
-    public List<AgentSubConfig> Formats { get; set; }
-    public List<AgentSubConfig> Configurations { get; set; }
+    public List<string> OperatingSystems { get; set; }
+    public List<string> Architectures { get; set; }
+    public List<string> Versions { get; set; }
+    public List<string> Formats { get; set; }
+    public List<string> Configurations { get; set; }
 
     public List<AgentTransportConfig> AgentTransportTypes { get; set; }
     public List<CommandConfig> Commands { get; set; }
