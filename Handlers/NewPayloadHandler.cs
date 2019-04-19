@@ -122,10 +122,7 @@ namespace Faction.Build.Dotnet.Handlers
       // Build transport first
       File.Delete(Path.Join(workingDir, payload.AgentTransportType.BuildLocation));
 
-      string transportConfigFile = Path.GetTempFileName();
-      File.AppendAllText(transportConfigFile, payload.Transport.Configuration);
-
-      string transportBuildCommand = $"{payload.AgentTransportType.BuildCommand} {transportConfigFile}";
+      string transportBuildCommand = $"{payload.AgentTransportType.BuildCommand} {buildConfigFile}";
 
       Dictionary<string, string> cmdResult = RunCommand(workingDir, transportBuildCommand);
       string transportB64 = "";
