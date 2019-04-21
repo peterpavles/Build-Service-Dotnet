@@ -45,6 +45,7 @@ namespace Faction.Build.Dotnet.Handlers
       buildConfig.Version = _taskRepository.GetAgentTypeVersion(payload.AgentTypeVersionId).Name;
       buildConfig.Architecture = _taskRepository.GetAgentTypeVersion(payload.AgentTypeVersionId).Name;
       buildConfig.Configuration = _taskRepository.GetAgentTypeConfiguration(payload.AgentTypeConfigurationId).Name;
+      buildConfig.InitialTransportName = payload.Transport.Name;
       buildConfig.TransportConfiguration = payload.Transport.Configuration;
       buildConfig.Debug = payload.Debug;
       return buildConfig;
@@ -142,7 +143,7 @@ namespace Faction.Build.Dotnet.Handlers
 
       // Build the agent
       if (!String.IsNullOrEmpty(transportB64)) {
-        buildConfig.Transport = transportB64;
+        buildConfig.TransportModule = transportB64;
         File.AppendAllText(buildConfigFile, JsonConvert.SerializeObject(buildConfig, Formatting.Indented));
 
         File.Delete(Path.Join(workingDir, payload.AgentType.BuildLocation));
@@ -163,7 +164,7 @@ namespace Faction.Build.Dotnet.Handlers
             Console.WriteLine($"[PayloadBuildService] Uploading to {uploadUlr} with token {payload.BuildToken}");
             byte[] resp = wc.UploadFile(uploadUlr, payloadPath);
             Console.WriteLine($"[PayloadBuildService] Response: {wc.Encoding.GetString(resp)}");
-            File.Delete(buildConfigFile);
+            //File.Delete(buildConfigFile);
           }
           catch (Exception e) {
             Console.WriteLine($"ERROR UPLOADING PAYLOAD TO API: \n{e.Message}");

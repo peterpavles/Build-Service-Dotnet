@@ -77,7 +77,8 @@ namespace Faction.Build.Dotnet.Objects
   {
     public string PayloadName;
     public string PayloadKey;
-    public string Transport;
+    public string InitialTransportName;
+    public string TransportModule;
     public int BeaconInterval;
     public double Jitter;
     public string ExpirationDate;
