@@ -45,7 +45,7 @@ namespace Faction.Build.Dotnet.Handlers
       buildConfig.Version = _taskRepository.GetAgentTypeVersion(payload.AgentTypeVersionId).Name;
       buildConfig.Architecture = _taskRepository.GetAgentTypeVersion(payload.AgentTypeVersionId).Name;
       buildConfig.Configuration = _taskRepository.GetAgentTypeConfiguration(payload.AgentTypeConfigurationId).Name;
-      buildConfig.InitialTransportName = payload.Transport.Name;
+      buildConfig.InitialTransportType = payload.Transport.TransportType;
       buildConfig.TransportConfiguration = payload.Transport.Configuration;
       buildConfig.Debug = payload.Debug;
       return buildConfig;
