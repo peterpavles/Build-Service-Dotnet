@@ -122,18 +122,50 @@ namespace Faction.Build.Dotnet
           agentType.Guid = agentTypeConfig.Guid;
           agentType.Authors = String.Join(", ", agentTypeConfig.Authors.ToArray());
           agentType.LanguageId = Settings.LanguageId;
+          agentType.BuildCommand = agentTypeConfig.BuildCommand;
+          agentType.BuildLocation = agentTypeConfig.BuildLocation;
           dbRepository.Add(agentType);
 
-          foreach (AgentFormatConfig formatConfig in agentTypeConfig.AgentTypeFormats)
+          foreach (string value in agentTypeConfig.Architectures)
+          {
+            AgentTypeArchitecture agentTypeArchitecture = new AgentTypeArchitecture();
+            agentTypeArchitecture.Name = value;
+            agentTypeArchitecture.AgentTypeId = agentType.Id;
+            dbRepository.Add(agentTypeArchitecture);
+          }
+
+          foreach (string value in agentTypeConfig.OperatingSystems)
+          {
+            AgentTypeOperatingSystem agentTypeOperatingSystem = new AgentTypeOperatingSystem();
+            agentTypeOperatingSystem.Name = value;
+            agentTypeOperatingSystem.AgentTypeId = agentType.Id;
+            dbRepository.Add(agentTypeOperatingSystem);
+          }
+
+          foreach (string value in agentTypeConfig.Formats)
           {
             AgentTypeFormat agentTypeFormat = new AgentTypeFormat();
-            agentTypeFormat.Name = formatConfig.Name;
-            agentTypeFormat.Description = formatConfig.Description;
-            agentTypeFormat.BuildCommand = formatConfig.BuildCommand;
-            agentTypeFormat.BuildLocation = formatConfig.BuildLocation;
+            agentTypeFormat.Name = value;
             agentTypeFormat.AgentTypeId = agentType.Id;
             dbRepository.Add(agentTypeFormat);
           }
+
+          foreach (string value in agentTypeConfig.Versions)
+          {
+            AgentTypeVersion agentTypeVersion = new AgentTypeVersion();
+            agentTypeVersion.Name = value;
+            agentTypeVersion.AgentTypeId = agentType.Id;
+            dbRepository.Add(agentTypeVersion);
+          }
+          
+          foreach (string value in agentTypeConfig.Configurations)
+          {
+            AgentTypeConfiguration agentTypeConfiguration = new AgentTypeConfiguration();
+            agentTypeConfiguration.Name = value;
+            agentTypeConfiguration.AgentTypeId = agentType.Id;
+            dbRepository.Add(agentTypeConfiguration);
+          }
+
 
           foreach (AgentTransportConfig agentTransportConfig in agentTypeConfig.AgentTransportTypes)
           {
