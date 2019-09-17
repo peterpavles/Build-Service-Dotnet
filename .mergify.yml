@@ -1,8 +1,9 @@
-- name: merge pull requests from dependabot if CI passes
-  conditions:
-    - author=dependabot[bot]
-    - status-success=FactionC2.Build-Service-Dotnet
-    - base=development
-  actions:
-    merge:
-      method: merge
+pull_request_rules:
+  - name: merge pull requests from dependabot if CI passes
+    conditions:
+      - author=dependabot[bot]
+      - status-success=FactionC2.Build-Service-Dotnet
+      - base=development
+    actions:
+      merge:
+        method: merge
