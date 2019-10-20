@@ -1,4 +1,4 @@
-FROM mono:5.18.0
+FROM mono:6
 WORKDIR /app
 ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
 
@@ -11,7 +11,7 @@ RUN apt-get update && \
     chown root:root /etc/apt/trusted.gpg.d/microsoft.asc.gpg && \
     chown root:root /etc/apt/sources.list.d/microsoft-prod.list && \
     apt-get update && \
-    apt-get install dotnet-sdk-2.2 -y && \
+    apt-get install dotnet-sdk-3.0 -y && \
     apt-get install python3 -y
 
 # copy csproj and restore as distinct layers
