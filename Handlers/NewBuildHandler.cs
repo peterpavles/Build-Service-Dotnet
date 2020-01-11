@@ -93,6 +93,10 @@ namespace Faction.Build.Dotnet.Handlers
       {
         Console.WriteLine($"[i] Build is ours. Lets do this..");
         Payload payload = _taskRepository.GetPayload(newPayloadBuild.PayloadId);
+        payload.AgentType = _taskRepository.GetAgentType(payload.AgentTypeId);
+        payload.AgentTransportType = _taskRepository.GetAgentTransportType(payload.AgentTransportTypeId);
+        payload.AgentTypeConfiguration = _taskRepository.GetAgentTypeConfiguration(payload.AgentTypeConfigurationId);
+        payload.Transport = _taskRepository.GetTransport(payload.TransportId);
         string workingDir = Path.Join(Settings.AgentsPath, payload.AgentType.Name);
 
         // Create build config file
@@ -146,27 +150,29 @@ namespace Faction.Build.Dotnet.Handlers
               byte[] resp = wc.UploadFile(uploadUlr, payloadPath);
               Console.WriteLine($"[PayloadBuildService] Response: {wc.Encoding.GetString(resp)}");
               //File.Delete(buildConfigFile);
-              
-              BuildComplete buildComplete = new BuildComplete();
-              buildComplete.Success = true;
-              buildComplete.Payload = payload;
-              _eventBus.Publish(buildComplete, replyTo, correlationId);
+
+              PayloadUpdated payloadUpdated = new PayloadUpdated {Success = true, Payload = payload};
+              _eventBus.Publish(payloadUpdated, replyTo, correlationId);
             }
             catch (Exception e) {
               Console.WriteLine($"ERROR UPLOADING PAYLOAD TO API: \n{e.Message}");
-              NewErrorMessage response = new NewErrorMessage();
-              response.Source = ".NET Build Server";
-              response.Message = $"Error uploading {payload.AgentType.Name} payload to API";
-              response.Details = $"{e.Message}";
+              NewErrorMessage response = new NewErrorMessage
+              {
+                Source = ".NET Build Server",
+                Message = $"Error uploading {payload.AgentType.Name} payload to API",
+                Details = $"{e.Message}"
+              };
               _eventBus.Publish(response, replyTo=null, correlationId=null);
             }
           }
           else {
             Console.WriteLine($"ERROR DURING AGENT BUILD: \nStdout: {cmdResult["Output"]}\n Stderr: {cmdResult["Error"]}");
-            NewErrorMessage response = new NewErrorMessage();
-            response.Source = ".NET Build Server";
-            response.Message = $"Error building {payload.AgentType.Name}";
-            response.Details = $"Stdout: {cmdResult["Output"]}\n Stderr: {cmdResult["Error"]}";
+            NewErrorMessage response = new NewErrorMessage
+            {
+              Source = ".NET Build Server",
+              Message = $"Error building {payload.AgentType.Name}",
+              Details = $"Stdout: {cmdResult["Output"]}\n Stderr: {cmdResult["Error"]}"
+            };
             _eventBus.Publish(response, replyTo=null, correlationId=null);
           }
         }
@@ -174,11 +180,13 @@ namespace Faction.Build.Dotnet.Handlers
         {
           Console.WriteLine(
             $"ERROR DURING AGENT BUILD: \nStdout: {cmdResult["Output"]}\n Stderr: {cmdResult["Error"]}");
-          NewErrorMessage response = new NewErrorMessage();
-          response.Source = ".NET Build Server";
-          response.Message = $"Error building {payload.AgentType.Name}";
-          response.Details =
-            $"Tried to build an agent without a Base64 encoded transport string. Transport build must have failed.";
+          NewErrorMessage response = new NewErrorMessage
+          {
+            Source = ".NET Build Server",
+            Message = $"Error building {payload.AgentType.Name}",
+            Details =
+              $"Tried to build an agent without a Base64 encoded transport string. Transport build must have failed."
+          };
           _eventBus.Publish(response, replyTo = null, correlationId = null);
         }
       }
