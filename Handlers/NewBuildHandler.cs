@@ -150,7 +150,7 @@ namespace Faction.Build.Dotnet.Handlers
               byte[] resp = wc.UploadFile(uploadUlr, payloadPath);
               Console.WriteLine($"[PayloadBuildService] Response: {wc.Encoding.GetString(resp)}");
               //File.Delete(buildConfigFile);
-
+              payload.Built = true;
               PayloadUpdated payloadUpdated = new PayloadUpdated {Success = true, Payload = payload};
               _eventBus.Publish(payloadUpdated, replyTo, correlationId);
             }
